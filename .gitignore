@@ -1,0 +1,5 @@
+*.o
+*.exe
+/spim/parser_yacc.h
+/spim/parser_yacc.c
+/spim/lex.yy.c

@@ -5,6 +5,18 @@
 
 #include "statistics.h"
 
+/* Do some dirty things so we can bolt on a quick size calculator */
+typedef unsigned int  uint32;
+typedef uint32 /*@alt int @*/ mem_addr;
+extern void user_kernel_text_segment(bool);
+extern mem_addr find_symbol_address(char*);
+extern mem_addr current_text_pc();
+#ifndef END_OF_TRAP_HANDLER_SYMBOL
+#define END_OF_TRAP_HANDLER_SYMBOL "__eoth"
+#endif
+/* End of the filth */
+
+
 void statistics_reset(statistics_t *s)
 {
   memset(s, 0, sizeof(s));
@@ -12,13 +24,22 @@ void statistics_reset(statistics_t *s)
 
 void statistics_print(statistics_t *s,FILE *f)
 {
+  mem_addr dump_start;
+  mem_addr dump_end;
+
+  /* dump text segment */
+  user_kernel_text_segment (false);
+  dump_start = find_symbol_address (END_OF_TRAP_HANDLER_SYMBOL);
+  dump_end = current_text_pc ();
+    
   int other_instructions =  
     s->instruction_count - (s->num_reads + s->num_writes + s->num_branches);
   fprintf(f,
 	  "Stats -- #instructions : %d\n"
-	  "         #reads : %d  #writes %d  #branches %d  #other %d\n",
+	  "         #reads : %d  #writes %d  #branches %d  #other %d  static size: %d\n",
 	  s->instruction_count,
-	  s->num_reads,s->num_writes,s->num_branches, other_instructions
+	  s->num_reads,s->num_writes,s->num_branches, other_instructions,
+      dump_end - dump_start
 	  );
 }
 
